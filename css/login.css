@@ -1,0 +1,22 @@
+body{
+    background-color: #303B44;
+}
+button{
+    margin-bottom: 15px;
+}
+.haut{
+    margin-top: 15px;
+}
+#padding{
+    padding: 20px 0px;
+}
+.white{
+    border: 2px solid rgb(18, 45, 89);
+    border-radius: 10px;
+}
+.margin-top{
+    margin-top: 5vw;
+}
+.gris{
+    background-color: #303B44;
+}
