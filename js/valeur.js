@@ -1,5 +1,5 @@
-var Lat = localStorage.getItem("Lat");
-var Lng = localStorage.getItem("Lng");
+var Lat = 43.182285500000006;        // LAT et LNG pour api meteo
+var Lng = 2.9789195;
 
 var Tempe = 35,
     Hum = 75,
@@ -18,28 +18,46 @@ var EspTempe = 0;
 var EspHum = 0;
 var EspMasse = 0;
 var EspAir = 0;
+var interval;
 
+function round2Fixed(value) {      // fonction arrondie a 2 decimales
+    value = +value;
 
-var Esp = new XMLHttpRequest();
-Esp.open('GET' ,'http://192.168.4.1:80/read', false);
-Esp.send(null);
+    if (isNaN(value))
+        return NaN;
 
+    // Shift
+    value = value.toString().split('e');
+    value = Math.round(+(value[0] + 'e' + (value[1] ? (+value[1] + 2) : 2)));
 
-if (Esp.status === 200) {
-    var EspJson = JSON.parse(Esp.responseText);
+    // Shift back
+    value = value.toString().split('e');
+    return (+(value[0] + 'e' + (value[1] ? (+value[1] - 2) : -2))).toFixed(2);
 }
 
-EspTempe = EspJson.temp;
-Tempe = EspTempe;
-EspHum = EspJson.humidity;
-Hum = EspHum;
-EspMasse = EspJson.button1;
-Masse = EspMasse / 10.24;
-EspAir = EspJson.button2;
-Air = EspAir / 10.24;
+function RefreshVar() {          // fonction qui rafraichien consequence de l'esp
+    var Esp = new XMLHttpRequest();
+    Esp.open('GET' ,'http://192.168.4.1:80/read', false);
+    Esp.send(null);
 
-console.log(EspJson);
-var Meteo = new XMLHttpRequest();
+
+    if (Esp.status === 200) {
+        var EspJson = JSON.parse(Esp.responseText);
+    }
+
+    EspTempe = EspJson.temp;
+    Tempe = EspTempe;
+    EspHum = EspJson.humidity;
+    Hum = EspHum;
+    EspMasse = EspJson.button1;
+    Masse = round2Fixed(EspMasse / 10.24);
+    EspAir = EspJson.button2;
+    Air = round2Fixed(EspAir / 10.24);
+
+    Variable();
+}
+
+var Meteo = new XMLHttpRequest();        // recup api meteo
 Meteo.open('GET', 'http://api.openweathermap.org/data/2.5/weather?lat=' + Lat +'&lon=' + Lng + '&appid=d3d7ae9413c8c4679b5e2db711c348cc', false);
 Meteo.send(null);
 
@@ -48,7 +66,7 @@ if (Meteo.status === 200) {
      var courses = JSON.parse(Meteo.responseText);
 }
 
-function degreeToCardinalDirection(degree) {
+function degreeToCardinalDirection(degree) {                    // fonction degree to cardinal
     const val = Math.floor(0.5 + (degree / 22.5)),
         cardinalDirection =  [
             'N',
@@ -72,7 +90,7 @@ function degreeToCardinalDirection(degree) {
     return cardinalDirection[(val % 16)];
 }
 
-cardi = courses.wind.deg;
+cardi = courses.wind.deg;                                             // sens du vent
 if (cardi == null){
     cardi = 358;
     var Cardinal = degreeToCardinalDirection(cardi);
@@ -81,17 +99,17 @@ if (cardi == null){
 }
 
 
-MTempeFst = courses.main.temp;
+MTempeFst = courses.main.temp;                                         // temp meteo
 
 MTempe = parseInt(MTempeFst - 273.15);
 
-VtVent = courses.wind.speed;
+VtVent = courses.wind.speed;                                           // Vitesse du vent
 
-Humi = courses.main.humidity;
+Humi = courses.main.humidity;                                          // humidité
 
-LogoM = courses.weather[0].main;
+LogoM = courses.weather[0].main;                                       // il fait beau :)
 
-switch (LogoM) {
+switch (LogoM) {                                                       // switch pour le logo du temps
     case 'Clear':
         LogoM = "wi wi-day-sunny";
         break;
@@ -117,7 +135,7 @@ switch (LogoM) {
         console.log('Erreur LogoM = ' + LogoM );
 }
 
-var TempeP = document.getElementsByTagName('p')[3];
+var TempeP = document.getElementsByTagName('p')[3];                                   // tous les trucs qui sont modifié dans le html
 var HumP = document.getElementsByTagName('p')[5];
 var MasseP = document.getElementsByTagName('p')[7];
 var AirP = document.getElementsByTagName('p')[9];
@@ -128,7 +146,7 @@ var VtVentP = document.getElementsByTagName('p')[14];
 var HumiP = document.getElementsByTagName('p')[15];
 var LogoMP = document.getElementsByTagName('i')[2];
 
-function Variable() {
+function Variable() {                                                               // envoi des variable dans le html
     if (Tempe < 30 || Tempe > 40){
         TempeP.innerHTML = Tempe + "°C";
         TempeP.style.color = "#C20007";
@@ -181,9 +199,9 @@ function Variable() {
     LogoMP.className = LogoM;
 }
 
-Variable();
+interval = setInterval(RefreshVar,1000);                                                     // interval de rafachisssement des le depart
 
-function VariableNul() {
+function VariableNul() {                                    // pour la ruche deco
         TempeP.innerHTML = "...°C";
         TempeP.style.color = "#FFF";
         HumP.innerHTML = "... %";
@@ -193,6 +211,7 @@ function VariableNul() {
         AirP.innerHTML = "... %";
         AirP.style.color = "#FFF";
         Abeilles.innerHTML = "... Abeilles";
+
 }
 var NomRuche = document.getElementsByTagName('p')[0];
 var StatusP = document.getElementsByTagName('p')[1];
@@ -201,31 +220,35 @@ var Num = 0;
 var Status = new Array ("OK", "DECO");
 
 
-var Btnsuivant = document.getElementsByTagName('i')[1];
+var Btnsuivant = document.getElementsByTagName('i')[1];                                               // bouton   <   pour changer la ruche
 Btnsuivant.addEventListener("click", function () {
     if (Num == 0){
         ++Num;
         NomRuche.innerHTML = 'Ruche : <span id="nomruche">' + ArrRuche[Num] + '</span>';
         StatusP.innerHTML = 'Status : <span id="statusR">' + Status[Num] + '</span>';
+        clearInterval(interval);
         VariableNul();
     } else {
         --Num;
         NomRuche.innerHTML = 'Ruche : <span id="nomruche">' + ArrRuche[Num] + '</span>';
         StatusP.innerHTML = 'Status : <span id="status">' + Status[Num] + '</span>';
-        Variable();
+        clearInterval(interval);
+        interval = setInterval(RefreshVar,1000);
     }
 });
-var Btnsuivant = document.getElementsByTagName('i')[0];
+var Btnsuivant = document.getElementsByTagName('i')[0];                                               // bouton   >   pour changer la ruche
 Btnsuivant.addEventListener("click", function () {
     if (Num == 0){
         ++Num;
         NomRuche.innerHTML = 'Ruche : <span id="nomruche">' + ArrRuche[Num] + '</span>';
         StatusP.innerHTML = 'Status : <span id="statusR">' + Status[Num] + '</span>';
+        clearInterval(interval);
         VariableNul();
     } else {
         --Num;
         NomRuche.innerHTML = 'Ruche : <span id="nomruche">' + ArrRuche[Num] + '</span>';
         StatusP.innerHTML = 'Status : <span id="status">' + Status[Num] + '</span>';
-        Variable();
+        clearInterval(interval);
+        interval = setInterval(RefreshVar,1000);
     }
 });
